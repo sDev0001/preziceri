@@ -1,0 +1,6 @@
+node_modules/
+.env
+.idea/
+.claude/
+data/csv/*_parsed.json
+data/PL_*.json

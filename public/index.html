@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Football Predictor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0e17;
+      color: #e0e6ed;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%);
+      border-bottom: 1px solid #1e2d3d;
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      color: #6b7b8d;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      background: #0d1117;
+      border-bottom: 1px solid #1e2d3d;
+      flex-wrap: wrap;
+    }
+
+    .nav button {
+      padding: 10px 24px;
+      border: 1px solid #2a3a4a;
+      border-radius: 8px;
+      background: #151b28;
+      color: #8b9bb4;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav button:hover { border-color: #4ade80; color: #4ade80; }
+    .nav button.active { background: #1a2e1a; border-color: #4ade80; color: #4ade80; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Predict section */
+    .predict-form {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .form-group { flex: 1; min-width: 180px; }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #6b7b8d;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: #151b28;
+      border: 1px solid #2a3a4a;
+      border-radius: 8px;
+      color: #e0e6ed;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    select:focus, input:focus { border-color: #4ade80; }
+
+    .btn {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      border: none;
+      border-radius: 8px;
+      color: #0a0e17;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Result card */
+    .result-card {
+      background: #151b28;
+      border: 1px solid #1e2d3d;
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 16px;
+    }
+
+    .match-title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .match-title .vs { color: #6b7b8d; margin: 0 12px; font-weight: 400; }
+
+    .expected-goals {
+      text-align: center;
+      color: #6b7b8d;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .probabilities {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .prob-box {
+      flex: 1;
+      text-align: center;
+      padding: 20px 12px;
+      border-radius: 12px;
+      background: #1a2030;
+      border: 1px solid #2a3a4a;
+      transition: all 0.3s;
+    }
+
+    .prob-box.winner {
+      border-color: #4ade80;
+      background: #1a2e1a;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.1);
+    }
+
+    .prob-box .label {
+      font-size: 13px;
+      color: #6b7b8d;
+      margin-bottom: 8px;
+    }
+
+    .prob-box .value {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    .prob-box.winner .value { color: #4ade80; }
+
+    .prob-box .team-name {
+      font-size: 12px;
+      color: #8b9bb4;
+      margin-top: 4px;
+    }
+
+    /* Score predictions */
+    .scores-title {
+      font-size: 14px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .score-label {
+      font-size: 18px;
+      font-weight: 700;
+      width: 50px;
+      text-align: center;
+    }
+
+    .score-bar-bg {
+      flex: 1;
+      height: 28px;
+      background: #1a2030;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0a0e17;
+      transition: width 0.6s ease;
+    }
+
+    .score-bar.s0 { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+    .score-bar.s1 { background: linear-gradient(90deg, #22d3ee, #818cf8); }
+    .score-bar.s2 { background: linear-gradient(90deg, #818cf8, #c084fc); }
+    .score-bar.s3 { background: linear-gradient(90deg, #c084fc, #f472b6); }
+    .score-bar.s4 { background: linear-gradient(90deg, #f472b6, #fb923c); }
+
+    /* Upcoming table */
+    .matchday-group {
+      margin-bottom: 24px;
+    }
+
+    .matchday-header {
+      font-size: 16px;
+      font-weight: 700;
+      color: #4ade80;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e2d3d;
+    }
+
+    .match-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      background: #151b28;
+      border: 1px solid #1e2d3d;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .match-row:hover { border-color: #4ade80; }
+
+    .match-row .home { text-align: right; font-weight: 600; }
+    .match-row .away { font-weight: 600; }
+    .match-row .vs-small { color: #6b7b8d; font-size: 13px; }
+    .match-row .date { color: #6b7b8d; font-size: 13px; }
+
+    .match-row .probs {
+      display: flex;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .match-row .probs span {
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #1a2030;
+    }
+
+    .match-row .probs .hi { background: #1a2e1a; color: #4ade80; }
+    .match-row .no-data { color: #6b7b8d; font-style: italic; font-size: 13px; }
+
+    /* Backtest */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: #151b28;
+      border: 1px solid #1e2d3d;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .metric-card .metric-label {
+      font-size: 12px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .metric-card .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .metric-card .metric-sub {
+      font-size: 12px;
+      color: #4ade80;
+      margin-top: 4px;
+    }
+
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .breakdown-table th, .breakdown-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #1e2d3d;
+    }
+
+    .breakdown-table th {
+      font-size: 12px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .chart-card {
+      background: #151b28;
+      border: 1px solid #1e2d3d;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chart-card.full-width { grid-column: 1 / -1; }
+
+    .chart-card h3 {
+      font-size: 13px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .chart-card canvas {
+      width: 100%;
+      height: 250px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+      justify-content: center;
+      height: 200px;
+      padding: 0 16px;
+    }
+
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      max-width: 140px;
+    }
+
+    .bar-pair {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      height: 160px;
+      width: 100%;
+    }
+
+    .bar {
+      flex: 1;
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      min-height: 4px;
+      transition: height 0.6s ease;
+    }
+
+    .bar .bar-val {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .bar.predicted { background: linear-gradient(180deg, #4ade80, #22d3ee); }
+    .bar.predicted .bar-val { color: #4ade80; }
+    .bar.reality { background: linear-gradient(180deg, #f472b6, #fb923c); }
+    .bar.reality .bar-val { color: #f472b6; }
+
+    .bar-label {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #8b9bb4;
+      text-align: center;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+
+    .chart-legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* Sample results table */
+    .sample-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .sample-table th {
+      font-size: 11px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 6px;
+      text-align: left;
+      border-bottom: 1px solid #2a3a4a;
+    }
+
+    .sample-table td {
+      padding: 7px 6px;
+      border-bottom: 1px solid #1e2d3d;
+    }
+
+    .sample-table tr.correct { }
+    .sample-table tr.wrong td:first-child { color: #f87171; }
+
+    .result-icon { font-weight: 700; }
+    .result-icon.correct { color: #4ade80; }
+    .result-icon.wrong { color: #f87171; }
+
+    @media (max-width: 700px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7b8d;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid #2a3a4a;
+      border-top-color: #4ade80;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error { color: #f87171; text-align: center; padding: 20px; }
+
+    /* Analysis section */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .analysis-card {
+      background: #1a2030;
+      border: 1px solid #2a3a4a;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .analysis-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .analysis-card h3 {
+      font-size: 13px;
+      color: #6b7b8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #1e2d3d;
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .stat-label { color: #8b9bb4; }
+    .stat-row .stat-value { font-weight: 600; }
+    .stat-row .stat-value.good { color: #4ade80; }
+    .stat-row .stat-value.bad { color: #f87171; }
+    .stat-row .stat-value.neutral { color: #fbbf24; }
+
+    .trend-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .trend-badge.rising { background: #1a2e1a; color: #4ade80; }
+    .trend-badge.improving { background: #1a2e1a; color: #4ade80; }
+    .trend-badge.stable { background: #2a2a1a; color: #fbbf24; }
+    .trend-badge.declining { background: #2e1a1a; color: #f87171; }
+    .trend-badge.falling { background: #2e1a1a; color: #f87171; }
+
+    .streak-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .streak-badge.win { background: #1a2e1a; color: #4ade80; }
+    .streak-badge.draw { background: #2a2a1a; color: #fbbf24; }
+    .streak-badge.loss { background: #2e1a1a; color: #f87171; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .probabilities { flex-direction: column; }
+      .match-row { grid-template-columns: 1fr; gap: 4px; text-align: center; }
+      .match-row .home { text-align: center; }
+      .predict-form { flex-direction: column; }
+      .form-group { min-width: unset; }
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Football Predictor</h1>
+  <p>Ensemble v3 (Dixon-Coles + Elo + Odds) &middot; 20 sezoane &middot; Premier League</p>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showSection('predict')">Predictie Meci</button>
+  <button onclick="showSection('upcoming')">Meciuri Viitoare</button>
+  <button onclick="showSection('backtest')">Backtest</button>
+</div>
+
+<div class="container">
+
+  <!-- PREDICT -->
+  <div id="predict" class="section active">
+    <div class="predict-form">
+      <div class="form-group">
+        <label>Echipa Gazda</label>
+        <select id="homeTeam"><option value="">Incarcare...</option></select>
+      </div>
+      <div class="form-group">
+        <label>Echipa Oaspete</label>
+        <select id="awayTeam"><option value="">Incarcare...</option></select>
+      </div>
+      <button class="btn" id="predictBtn" onclick="doPrediction()">Prezice</button>
+    </div>
+    <div id="predictResult"></div>
+  </div>
+
+  <!-- UPCOMING -->
+  <div id="upcoming" class="section">
+    <div id="upcomingResult">
+      <div class="loading"><div class="spinner"></div><br>Se incarca meciurile...</div>
+    </div>
+  </div>
+
+  <!-- BACKTEST -->
+  <div id="backtest" class="section">
+    <div id="backtestResult">
+      <div style="text-align:center; padding: 40px;">
+        <button class="btn" onclick="doBacktest()">Ruleaza Backtesting</button>
+        <p style="color: #6b7b8d; margin-top: 12px; font-size: 13px;">Testeaza modelul pe meciuri trecute din sezonul 2024/25</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let teams = [];
+
+  // Load teams on page load
+  async function loadTeams() {
+    try {
+      const res = await fetch('/api/teams');
+      teams = await res.json();
+      const homeSelect = document.getElementById('homeTeam');
+      const awaySelect = document.getElementById('awayTeam');
+      homeSelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+      awaySelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+      // Default selection
+      if (teams.includes('Arsenal')) homeSelect.value = 'Arsenal';
+      if (teams.includes('Chelsea')) awaySelect.value = 'Chelsea';
+    } catch (err) {
+      console.error('Failed to load teams:', err);
+    }
+  }
+
+  function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    event.target.classList.add('active');
+
+    if (name === 'upcoming' && !upcomingLoaded) loadUpcoming();
+  }
+
+  // PREDICT
+  async function doPrediction() {
+    const home = document.getElementById('homeTeam').value;
+    const away = document.getElementById('awayTeam').value;
+    const btn = document.getElementById('predictBtn');
+    const div = document.getElementById('predictResult');
+
+    if (home === away) {
+      div.innerHTML = '<p class="error">Alege echipe diferite!</p>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Se calculeaza...';
+    div.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+    try {
+      const res = await fetch(`/api/predict?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      div.innerHTML = renderPrediction(data);
+    } catch (err) {
+      div.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Prezice';
+  }
+
+  function renderPrediction(d) {
+    const maxProb = Math.max(d.outcomes.homeWin, d.outcomes.draw, d.outcomes.awayWin);
+    const hw = d.outcomes.homeWin === maxProb ? 'winner' : '';
+    const dw = d.outcomes.draw === maxProb ? 'winner' : '';
+    const aw = d.outcomes.awayWin === maxProb ? 'winner' : '';
+
+    const scores = d.likelyScores.map((s, i) => {
+      const w = Math.max(s.probability * 8, 10);
+      return `
+        <div class="score-row">
+          <div class="score-label">${s.score}</div>
+          <div class="score-bar-bg">
+            <div class="score-bar s${i}" style="width: ${w}%">${s.probability}%</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Individual model comparison
+    const mod = d.models || {};
+    let modelsHtml = '';
+    if (mod.dixonColes || mod.elo) {
+      modelsHtml = `<div class="result-card" style="margin-top:16px">
+        <div class="scores-title">Predictie per model</div>
+        <table class="breakdown-table" style="font-size:13px">
+          <thead><tr><th>Model</th><th>Victorie Gazda</th><th>Egal</th><th>Victorie Oaspete</th></tr></thead>
+          <tbody>
+            ${mod.dixonColes ? `<tr><td>Dixon-Coles</td><td>${mod.dixonColes.homeWin}%</td><td>${mod.dixonColes.draw}%</td><td>${mod.dixonColes.awayWin}%</td></tr>` : ''}
+            <tr><td>Elo Rating${d.eloRatings ? ` (${d.eloRatings.home} vs ${d.eloRatings.away})` : ''}</td><td>${mod.elo.homeWin}%</td><td>${mod.elo.draw}%</td><td>${mod.elo.awayWin}%</td></tr>
+            ${mod.odds ? `<tr><td>Cote Pariuri (piata)</td><td>${mod.odds.homeWin}%</td><td>${mod.odds.draw}%</td><td>${mod.odds.awayWin}%</td></tr>` : ''}
+            <tr style="font-weight:700;border-top:2px solid #4ade80"><td>ENSEMBLE</td><td>${d.outcomes.homeWin}%</td><td>${d.outcomes.draw}%</td><td>${d.outcomes.awayWin}%</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    }
+
+    // Analysis details
+    const a = d.analysis || {};
+    let analysisHtml = '';
+
+    if (a.homeForm && a.awayForm) {
+      analysisHtml += `
+        <div class="analysis-grid">
+          ${renderFormCard(d.homeTeam, a.homeForm, a.homeMomentum)}
+          ${renderFormCard(d.awayTeam, a.awayForm, a.awayMomentum)}
+          ${renderH2HCard(d.homeTeam, d.awayTeam, a.h2h)}
+          ${a.homeStats && a.awayStats ? renderMatchStatsCard(d.homeTeam, a.homeStats, d.awayTeam, a.awayStats) : ''}
+          ${renderAdvancedCard(d.homeTeam, a.homeAdvanced, d.awayTeam, a.awayAdvanced)}
+        </div>`;
+    }
+
+    return `
+      <div class="result-card">
+        <div class="match-title">${d.homeTeam} <span class="vs">vs</span> ${d.awayTeam}</div>
+        <div class="expected-goals">Goluri asteptate: ${d.expectedGoals.home} - ${d.expectedGoals.away}</div>
+        <div class="probabilities">
+          <div class="prob-box ${hw}">
+            <div class="label">Victorie Gazda</div>
+            <div class="value">${d.outcomes.homeWin}%</div>
+            <div class="team-name">${d.homeTeam}</div>
+          </div>
+          <div class="prob-box ${dw}">
+            <div class="label">Egal</div>
+            <div class="value">${d.outcomes.draw}%</div>
+          </div>
+          <div class="prob-box ${aw}">
+            <div class="label">Victorie Oaspete</div>
+            <div class="value">${d.outcomes.awayWin}%</div>
+            <div class="team-name">${d.awayTeam}</div>
+          </div>
+        </div>
+        <div class="scores-title">Scoruri cele mai probabile</div>
+        ${scores}
+      </div>
+      ${modelsHtml}
+      ${analysisHtml}`;
+  }
+
+  // UPCOMING
+  let upcomingLoaded = false;
+  async function loadUpcoming() {
+    const div = document.getElementById('upcomingResult');
+    div.innerHTML = '<div class="loading"><div class="spinner"></div><br>Se incarca meciurile viitoare...<br><small style="color:#4a5568">Prima incarcare poate dura cateva secunde (rate limit API)</small></div>';
+
+    try {
+      const res = await fetch('/api/upcoming');
+      const matches = await res.json();
+      if (matches.error) throw new Error(matches.error);
+      upcomingLoaded = true;
+      div.innerHTML = renderUpcoming(matches);
+    } catch (err) {
+      div.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+  }
+
+  function renderUpcoming(matches) {
+    const byMd = {};
+    for (const m of matches) {
+      const md = m.matchday || 'TBD';
+      if (!byMd[md]) byMd[md] = [];
+      byMd[md].push(m);
+    }
+
+    let html = '';
+    for (const [md, list] of Object.entries(byMd)) {
+      html += `<div class="matchday-group"><div class="matchday-header">Etapa ${md}</div>`;
+      for (const m of list) {
+        if (m.prediction) {
+          const p = m.prediction;
+          const maxP = Math.max(p.homeWin, p.draw, p.awayWin);
+          const hCls = p.homeWin === maxP ? 'hi' : '';
+          const dCls = p.draw === maxP ? 'hi' : '';
+          const aCls = p.awayWin === maxP ? 'hi' : '';
+
+          html += `
+            <div class="match-row" onclick="quickPredict('${m.homeTeam}','${m.awayTeam}')">
+              <div class="home">${m.homeTeam}</div>
+              <div class="vs-small">vs</div>
+              <div class="away">${m.awayTeam}</div>
+              <div class="probs">
+                <span class="${hCls}">${p.homeWin}%</span>
+                <span class="${dCls}">${p.draw}%</span>
+                <span class="${aCls}">${p.awayWin}%</span>
+              </div>
+              <div class="date">${m.date} &middot; ${p.topScore}</div>
+            </div>`;
+        } else {
+          html += `
+            <div class="match-row">
+              <div class="home">${m.homeTeam}</div>
+              <div class="vs-small">vs</div>
+              <div class="away">${m.awayTeam}</div>
+              <div class="no-data">Fara date</div>
+              <div class="date">${m.date}</div>
+            </div>`;
+        }
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function quickPredict(home, away) {
+    document.getElementById('homeTeam').value = home;
+    document.getElementById('awayTeam').value = away;
+    showSectionDirect('predict');
+    doPrediction();
+  }
+
+  function showSectionDirect(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelectorAll('.nav button')[0].classList.add('active');
+  }
+
+  // BACKTEST
+  async function doBacktest() {
+    const div = document.getElementById('backtestResult');
+    div.innerHTML = '<div class="loading"><div class="spinner"></div><br>Se ruleaza backtesting pe sezonul 2024/25...</div>';
+
+    try {
+      const res = await fetch('/api/backtest');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      div.innerHTML = renderBacktest(data);
+    } catch (err) {
+      div.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+  }
+
+  function renderBacktest(d) {
+    const m = d.model;
+    const b = d.baseline;
+    const c = d.charts || {};
+
+    let breakdownRows = '';
+    for (const [key, stats] of Object.entries(m.breakdown)) {
+      const label = key === 'HOME_TEAM' ? 'Victorie Gazda' : key === 'DRAW' ? 'Egal' : 'Victorie Oaspete';
+      breakdownRows += `
+        <tr>
+          <td>${label}</td>
+          <td>${stats.count}</td>
+          <td>${(stats.accuracy * 100).toFixed(1)}%</td>
+          <td>${stats.avgBrier.toFixed(4)}</td>
+        </tr>`;
+    }
+
+    // Prediction vs Reality bar chart
+    const pvr = c.predictionVsReality || {};
+    const pred = pvr.predicted || {};
+    const real = pvr.reality || {};
+    const maxBar = Math.max(pred.homeWin||0, pred.draw||0, pred.awayWin||0, real.homeWin||0, real.draw||0, real.awayWin||0);
+
+    function barH(val) { return maxBar > 0 ? Math.max(4, (val / maxBar) * 150) : 4; }
+
+    const barChart = `
+      <div class="chart-legend">
+        <span><div class="legend-dot" style="background:#4ade80"></div> Predictie model</span>
+        <span><div class="legend-dot" style="background:#f472b6"></div> Realitate</span>
+      </div>
+      <div class="bar-chart">
+        <div class="bar-group">
+          <div class="bar-pair">
+            <div class="bar predicted" style="height:${barH(pred.homeWin)}px"><span class="bar-val">${pred.homeWin}</span></div>
+            <div class="bar reality" style="height:${barH(real.homeWin)}px"><span class="bar-val">${real.homeWin}</span></div>
+          </div>
+          <div class="bar-label">Victorie Gazda</div>
+        </div>
+        <div class="bar-group">
+          <div class="bar-pair">
+            <div class="bar predicted" style="height:${barH(pred.draw)}px"><span class="bar-val">${pred.draw}</span></div>
+            <div class="bar reality" style="height:${barH(real.draw)}px"><span class="bar-val">${real.draw}</span></div>
+          </div>
+          <div class="bar-label">Egal</div>
+        </div>
+        <div class="bar-group">
+          <div class="bar-pair">
+            <div class="bar predicted" style="height:${barH(pred.awayWin)}px"><span class="bar-val">${pred.awayWin}</span></div>
+            <div class="bar reality" style="height:${barH(real.awayWin)}px"><span class="bar-val">${real.awayWin}</span></div>
+          </div>
+          <div class="bar-label">Victorie Oaspete</div>
+        </div>
+      </div>`;
+
+    // Calibration chart
+    const cal = c.calibration || [];
+    let calChart = '';
+    if (cal.length > 0) {
+      calChart = `
+        <div class="chart-legend">
+          <span><div class="legend-dot" style="background:#4ade80"></div> Ideal (perfect calibrat)</span>
+          <span><div class="legend-dot" style="background:#22d3ee"></div> Modelul nostru</span>
+        </div>
+        <canvas id="calibrationCanvas" width="400" height="250"></canvas>`;
+    }
+
+    // Rolling accuracy chart
+    const rolling = c.rollingAccuracy || [];
+    let rollingChart = '';
+    if (rolling.length > 0) {
+      rollingChart = `
+        <div class="chart-legend">
+          <span><div class="legend-dot" style="background:#4ade80"></div> Acuratete cumulativa</span>
+          <span><div class="legend-dot" style="background:#f472b6"></div> Ultimele 10 meciuri</span>
+        </div>
+        <canvas id="rollingCanvas" width="400" height="250"></canvas>`;
+    }
+
+    // Sample results
+    let sampleHtml = '';
+    if (c.sampleResults && c.sampleResults.length > 0) {
+      const rows = c.sampleResults.map(r => {
+        const cls = r.correct ? 'correct' : 'wrong';
+        return `<tr class="${cls}">
+          <td><span class="result-icon ${cls}">${r.correct ? 'V' : 'X'}</span></td>
+          <td>${r.match}</td>
+          <td>${r.homeWin}/${r.draw}/${r.awayWin}</td>
+          <td>${r.actual}</td>
+          <td>${r.predictedScore}</td>
+          <td>${r.actualScore}</td>
+        </tr>`;
+      }).join('');
+
+      sampleHtml = `
+        <table class="sample-table">
+          <thead><tr><th></th><th>Meci</th><th>Predictie (1/X/2)</th><th>Real</th><th>Scor prezis</th><th>Scor real</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    const html = `
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Brier Score</div>
+          <div class="metric-value" style="color: #4ade80">${m.brierScore.toFixed(4)}</div>
+          <div class="metric-sub">${d.improvement.brierPct}% mai bun decat baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Acuratete (1X2)</div>
+          <div class="metric-value" style="color: #22d3ee">${(m.accuracy * 100).toFixed(1)}%</div>
+          <div class="metric-sub">+${d.improvement.accuracyPp}pp vs baseline (${(b.accuracy * 100).toFixed(1)}%)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Scor Exact</div>
+          <div class="metric-value" style="color: #c084fc">${(m.scoreAccuracy * 100).toFixed(1)}%</div>
+          <div class="metric-sub">${m.totalMatches} meciuri evaluate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Confident >60%</div>
+          <div class="metric-value" style="color: #fbbf24">${m.confidentAccuracy != null ? (m.confidentAccuracy * 100).toFixed(1) + '%' : '-'}</div>
+          <div class="metric-sub">${m.confidentCount || 0} meciuri cu certitudine mare</div>
+        </div>
+      </div>
+
+      ${renderAccuracyByConfidence(c.accuracyByConfidence)}
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Predictie vs Realitate (numar meciuri)</h3>
+          ${barChart}
+        </div>
+        <div class="chart-card">
+          <h3>Calibrare (predictie % vs rata reala %)</h3>
+          ${calChart}
+        </div>
+        <div class="chart-card full-width">
+          <h3>Acuratete in timp (${m.totalMatches} meciuri)</h3>
+          ${rollingChart}
+        </div>
+      </div>
+
+      <div class="result-card" style="margin-top:16px">
+        <div class="scores-title">Detalii pe tip de rezultat</div>
+        <table class="breakdown-table">
+          <thead>
+            <tr><th>Rezultat</th><th>Meciuri</th><th>Acuratete</th><th>Brier Score</th></tr>
+          </thead>
+          <tbody>${breakdownRows}</tbody>
+        </table>
+      </div>
+
+      <div class="result-card" style="margin-top:16px">
+        <div class="scores-title">Ultimele 20 predictii vs realitate</div>
+        ${sampleHtml}
+      </div>`;
+
+    // Draw canvases after DOM update
+    setTimeout(() => {
+      if (cal.length > 0) drawCalibrationChart(cal);
+      if (rolling.length > 0) drawRollingChart(rolling);
+    }, 100);
+
+    return html;
+  }
+
+  function drawCalibrationChart(cal) {
+    const canvas = document.getElementById('calibrationCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.offsetWidth * 2;
+    const h = canvas.height = 500;
+    ctx.scale(1, 1);
+
+    const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    // Background
+    ctx.fillStyle = '#151b28';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#1e2d3d';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const y = pad.top + ch - (i / 10) * ch;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+      ctx.fillStyle = '#6b7b8d';
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((i * 10) + '%', pad.left - 8, y + 6);
+    }
+
+    // X axis labels
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 10; i++) {
+      const x = pad.left + (i / 10) * cw;
+      ctx.fillText((i * 10) + '%', x, h - 10);
+    }
+
+    // Ideal line (diagonal)
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top + ch);
+    ctx.lineTo(pad.left + cw, pad.top);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Model calibration line
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    let first = true;
+    for (const c of cal) {
+      const x = pad.left + c.avgPredicted * cw;
+      const y = pad.top + ch - c.actualRate * ch;
+      if (first) { ctx.moveTo(x, y); first = false; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Data points
+    for (const c of cal) {
+      const x = pad.left + c.avgPredicted * cw;
+      const y = pad.top + ch - c.actualRate * ch;
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawRollingChart(rolling) {
+    const canvas = document.getElementById('rollingCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.offsetWidth * 2;
+    const h = canvas.height = 500;
+
+    const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    ctx.fillStyle = '#151b28';
+    ctx.fillRect(0, 0, w, h);
+
+    // Y axis: 0-100%
+    ctx.strokeStyle = '#1e2d3d';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const y = pad.top + ch - (i / 10) * ch;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+      ctx.fillStyle = '#6b7b8d';
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((i * 10) + '%', pad.left - 8, y + 6);
+    }
+
+    // 50% reference line
+    const y50 = pad.top + ch - 0.5 * ch;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.left, y50); ctx.lineTo(pad.left + cw, y50); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const n = rolling.length;
+    const xStep = cw / (n - 1 || 1);
+
+    // Cumulative accuracy line
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    rolling.forEach((r, i) => {
+      const x = pad.left + i * xStep;
+      const y = pad.top + ch - (r.rollingAccuracy / 100) * ch;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Last 10 accuracy line
+    ctx.strokeStyle = '#f472b6';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    rolling.forEach((r, i) => {
+      const x = pad.left + i * xStep;
+      const y = pad.top + ch - (r.last10Accuracy / 100) * ch;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // X axis labels
+    ctx.fillStyle = '#6b7b8d';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    const step = Math.max(1, Math.floor(n / 6));
+    for (let i = 0; i < n; i += step) {
+      const x = pad.left + i * xStep;
+      ctx.fillText(rolling[i].matchIndex, x, h - 10);
+    }
+  }
+
+  // Accuracy by confidence renderer
+  function renderAccuracyByConfidence(data) {
+    if (!data || data.length === 0) return '';
+
+    const rows = data.map(b => {
+      const full = Math.floor(b.outOf10);
+      const half = b.outOf10 - full >= 0.5 ? 1 : 0;
+      const empty = 10 - full - half;
+      const balls = '<span style="color:#4ade80">&#9679;</span>'.repeat(full)
+        + (half ? '<span style="color:#fbbf24">&#9679;</span>' : '')
+        + '<span style="color:#2a3a4a">&#9679;</span>'.repeat(empty);
+
+      return `
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid #1e2d3d">
+          <div style="min-width:160px;font-size:14px;color:#8b9bb4">${b.label}</div>
+          <div style="font-size:18px;letter-spacing:2px">${balls}</div>
+          <div style="font-size:22px;font-weight:800;color:${b.outOf10 >= 7 ? '#4ade80' : b.outOf10 >= 5 ? '#fbbf24' : '#f87171'};min-width:60px">${b.outOf10}/10</div>
+          <div style="font-size:12px;color:#6b7b8d">${b.correct} din ${b.matches} meciuri (${b.accuracy}%)</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="result-card" style="margin-top:16px">
+        <div class="scores-title">Cate meciuri ghicim din 10?</div>
+        <p style="color:#6b7b8d;font-size:13px;margin-bottom:16px">Cu cat suntem mai siguri pe predictie, cu atat ghicim mai multe meciuri</p>
+        ${rows}
+      </div>`;
+  }
+
+  // Analysis renderers
+  function renderFormCard(team, form, momentum) {
+    if (!form) return '';
+    const streakCls = form.streak ? form.streak.type : 'none';
+    const streakText = form.streak ? `${form.streak.count} ${form.streak.type === 'win' ? 'V' : form.streak.type === 'draw' ? 'E' : 'I'}` : '-';
+    const dir = momentum ? momentum.direction : 'stable';
+
+    return `
+      <div class="analysis-card">
+        <h3>${team} - Forma recenta</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="trend-badge ${dir}">${dir === 'rising' ? 'In crestere' : dir === 'improving' ? 'Se imbunatateste' : dir === 'declining' ? 'In declin' : dir === 'falling' ? 'In cadere' : 'Stabil'}</span>
+          <span class="streak-badge ${streakCls}">${streakText}</span>
+        </div>
+        <div class="stat-row"><span class="stat-label">Ultimele ${form.recentMatches} meciuri</span><span class="stat-value">${form.wins}V ${form.draws}E ${form.losses}I</span></div>
+        <div class="stat-row"><span class="stat-label">Media puncte</span><span class="stat-value ${form.avgPoints >= 2 ? 'good' : form.avgPoints < 1.2 ? 'bad' : 'neutral'}">${form.avgPoints.toFixed(1)} / meci</span></div>
+        <div class="stat-row"><span class="stat-label">Goluri marcate</span><span class="stat-value">${form.avgGoalsFor.toFixed(2)} / meci</span></div>
+        <div class="stat-row"><span class="stat-label">Goluri primite</span><span class="stat-value">${form.avgGoalsAgainst.toFixed(2)} / meci</span></div>
+        <div class="stat-row"><span class="stat-label">Poarta neatinsa</span><span class="stat-value">${form.cleanSheets} din ${form.recentMatches}</span></div>
+        <div class="stat-row"><span class="stat-label">Fara gol marcat</span><span class="stat-value">${form.failedToScore} din ${form.recentMatches}</span></div>
+      </div>`;
+  }
+
+  function renderH2HCard(home, away, h2h) {
+    if (!h2h || h2h.insufficient) {
+      return `<div class="analysis-card full-width"><h3>${home} vs ${away} - Istoric direct</h3><p style="color:#6b7b8d;font-size:13px">Insuficiente meciuri directe (${h2h ? h2h.totalMatches : 0} meciuri, minim 4 necesare)</p></div>`;
+    }
+
+    return `
+      <div class="analysis-card full-width">
+        <h3>${home} vs ${away} - Istoric direct (${h2h.totalMatches} meciuri)</h3>
+        <div class="stat-row"><span class="stat-label">${home} victorii</span><span class="stat-value good">${h2h.homeWins} (${h2h.homeWinRate}%)</span></div>
+        <div class="stat-row"><span class="stat-label">Egaluri</span><span class="stat-value neutral">${h2h.draws} (${h2h.drawRate}%)</span></div>
+        <div class="stat-row"><span class="stat-label">${away} victorii</span><span class="stat-value bad">${h2h.awayWins} (${h2h.awayWinRate}%)</span></div>
+        <div class="stat-row"><span class="stat-label">Media goluri</span><span class="stat-value">${h2h.homeAvgGoals} - ${h2h.awayAvgGoals}</span></div>
+        ${h2h.recentH2H ? `<div class="stat-row"><span class="stat-label">Ultimele ${h2h.recentH2H.matches}</span><span class="stat-value">${h2h.recentH2H.homeWins}V ${h2h.recentH2H.draws}E ${h2h.recentH2H.awayWins}I</span></div>` : ''}
+      </div>`;
+  }
+
+  function renderAdvancedCard(home, homeAdv, away, awayAdv) {
+    if (!homeAdv || !awayAdv) return '';
+
+    return `
+      <div class="analysis-card full-width">
+        <h3>Statistici avansate</h3>
+        <table class="breakdown-table" style="font-size:13px">
+          <thead><tr><th>Statistica</th><th>${home}</th><th>${away}</th></tr></thead>
+          <tbody>
+            <tr><td>Poarta neatinsa</td><td>${homeAdv.cleanSheetPct}%</td><td>${awayAdv.cleanSheetPct}%</td></tr>
+            <tr><td>Fara gol marcat</td><td>${homeAdv.failedToScorePct}%</td><td>${awayAdv.failedToScorePct}%</td></tr>
+            <tr><td>Consistenta atac (std dev)</td><td>${homeAdv.scoringConsistency}</td><td>${awayAdv.scoringConsistency}</td></tr>
+            <tr><td>Consistenta aparare (std dev)</td><td>${homeAdv.defensiveConsistency}</td><td>${awayAdv.defensiveConsistency}</td></tr>
+            <tr><td>Meciuri cu 3+ goluri</td><td>${homeAdv.overPct}%</td><td>${awayAdv.overPct}%</td></tr>
+            <tr><td>Goalaveraj recent</td><td class="${homeAdv.avgGoalDiff > 0 ? 'stat-value good' : homeAdv.avgGoalDiff < 0 ? 'stat-value bad' : ''}">${homeAdv.avgGoalDiff > 0 ? '+' : ''}${homeAdv.avgGoalDiff}</td><td class="${awayAdv.avgGoalDiff > 0 ? 'stat-value good' : awayAdv.avgGoalDiff < 0 ? 'stat-value bad' : ''}">${awayAdv.avgGoalDiff > 0 ? '+' : ''}${awayAdv.avgGoalDiff}</td></tr>
+            ${homeAdv.bigGameRecord && awayAdv.bigGameRecord ? `<tr><td>Vs Top 6</td><td>${homeAdv.bigGameRecord.wins}/${homeAdv.bigGameRecord.total} (${homeAdv.bigGameRecord.rate}%)</td><td>${awayAdv.bigGameRecord.wins}/${awayAdv.bigGameRecord.total} (${awayAdv.bigGameRecord.rate}%)</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderMatchStatsCard(home, homeStats, away, awayStats) {
+    if (!homeStats || !awayStats) return '';
+
+    function better(a, b, higherIsBetter = true) {
+      if (higherIsBetter) return a > b ? 'good' : a < b ? 'bad' : 'neutral';
+      return a < b ? 'good' : a > b ? 'bad' : 'neutral';
+    }
+
+    return `
+      <div class="analysis-card full-width">
+        <h3>Statistici meciuri (medie ultimele ${homeStats.matchesAnalyzed} meciuri)</h3>
+        <table class="breakdown-table" style="font-size:13px">
+          <thead><tr><th>Statistica</th><th>${home}</th><th>${away}</th></tr></thead>
+          <tbody>
+            <tr><td>Suturi / meci</td><td class="stat-value ${better(homeStats.avgShots, awayStats.avgShots)}">${homeStats.avgShots}</td><td class="stat-value ${better(awayStats.avgShots, homeStats.avgShots)}">${awayStats.avgShots}</td></tr>
+            <tr><td>Suturi pe poarta / meci</td><td class="stat-value ${better(homeStats.avgSOT, awayStats.avgSOT)}">${homeStats.avgSOT}</td><td class="stat-value ${better(awayStats.avgSOT, homeStats.avgSOT)}">${awayStats.avgSOT}</td></tr>
+            <tr><td>Cornere / meci</td><td class="stat-value ${better(homeStats.avgCorners, awayStats.avgCorners)}">${homeStats.avgCorners}</td><td class="stat-value ${better(awayStats.avgCorners, homeStats.avgCorners)}">${awayStats.avgCorners}</td></tr>
+            <tr><td>Faulturi / meci</td><td>${homeStats.avgFouls}</td><td>${awayStats.avgFouls}</td></tr>
+            <tr><td>Conversie suturi (gol/SOT)</td><td class="stat-value ${better(homeStats.shotConversion, awayStats.shotConversion)}">${(homeStats.shotConversion * 100).toFixed(0)}%</td><td class="stat-value ${better(awayStats.shotConversion, homeStats.shotConversion)}">${(awayStats.shotConversion * 100).toFixed(0)}%</td></tr>
+            <tr><td>Precizie suturi (SOT/total)</td><td>${(homeStats.shotAccuracy * 100).toFixed(0)}%</td><td>${(awayStats.shotAccuracy * 100).toFixed(0)}%</td></tr>
+            <tr><td>Dominanta (suturi+cornere ratio)</td><td class="stat-value ${better(homeStats.dominanceRatio, awayStats.dominanceRatio)}">${homeStats.dominanceRatio}</td><td class="stat-value ${better(awayStats.dominanceRatio, homeStats.dominanceRatio)}">${awayStats.dominanceRatio}</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  // Init
+  loadTeams();
+</script>
+
+</body>
+</html>
