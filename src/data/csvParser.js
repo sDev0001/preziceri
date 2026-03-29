@@ -178,7 +178,12 @@ function loadParsedMatches(season, league = 'E0') {
   const csv = fs.readFileSync(csvPath, 'utf-8');
   const matches = parseMatchCSV(csv, season);
 
-  fs.writeFileSync(cachePath, JSON.stringify(matches, null, 2), 'utf-8');
+  // Try to cache parsed result (fails on read-only filesystems like Vercel)
+  try {
+    fs.writeFileSync(cachePath, JSON.stringify(matches, null, 2), 'utf-8');
+  } catch (e) {
+    // Read-only filesystem - skip caching
+  }
   return matches;
 }
 
