@@ -4,6 +4,7 @@
     { "src": "/api/teams", "dest": "/api/teams.js" },
     { "src": "/api/predict", "dest": "/api/predict.js" },
     { "src": "/api/backtest", "dest": "/api/backtest.js" },
+    { "src": "/api/upcoming", "dest": "/api/upcoming.js" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "functions": {

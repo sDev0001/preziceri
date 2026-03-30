@@ -770,8 +770,15 @@
 
     try {
       const res = await fetch('/api/upcoming');
-      const matches = await res.json();
-      if (matches.error) throw new Error(matches.error);
+      const data = await res.json();
+      // Handle message response (API key missing or unavailable)
+      if (data.message && (!data.matches || data.matches.length === 0)) {
+        upcomingLoaded = true;
+        div.innerHTML = `<div class="result-card" style="text-align:center;padding:40px"><p style="color:#fbbf24;font-size:16px">${data.message}</p><p style="color:#6b7b8d;margin-top:12px;font-size:13px">Foloseste "Predictie Meci" pentru a prezice orice meci manual</p></div>`;
+        return;
+      }
+      const matches = Array.isArray(data) ? data : (data.matches || []);
+      if (matches.length === 0) throw new Error('Nu sunt meciuri programate');
       upcomingLoaded = true;
       div.innerHTML = renderUpcoming(matches);
     } catch (err) {
